@@ -47,6 +47,10 @@ const loginUser = async (identifier, password) => {
 };
 
 const loginWithGoogle = async (googleIdToken) => {
+  if (!process.env.GOOGLE_CLIENT_ID) {
+    throw new Error("GOOGLE_CLIENT_ID_NOT_CONFIGURED");
+  }
+
   // 1. Xác minh token từ Google
   const ticket = await client.verifyIdToken({
     idToken: googleIdToken,

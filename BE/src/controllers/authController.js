@@ -173,6 +173,12 @@ const googleLogin = async (req, res) => {
       redirect_url: authResult.redirect_url,
     });
   } catch (error) {
+    if (error.message === "GOOGLE_CLIENT_ID_NOT_CONFIGURED") {
+      return res
+        .status(500)
+        .json({ message: "Thiếu GOOGLE_CLIENT_ID trong BE/.env." });
+    }
+
     console.error("Google Login Error:", error);
     return res.status(401).json({ message: "Xác thực Google thất bại." });
   }

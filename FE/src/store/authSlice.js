@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import {
   loginApi,
+  googleLoginApi,
   registerApi,
   forgotPasswordApi,
   getUserProfileApi,
@@ -21,6 +22,26 @@ export const loginUser = createAsyncThunk(
         return res;
       }
       return rejectWithValue(res?.message || "Đăng nhập thất bại");
+    } catch (err) {
+      return rejectWithValue(err?.message || "Lỗi kết nối server");
+    }
+  },
+);
+
+export const googleLoginUser = createAsyncThunk(
+  "auth/googleLogin",
+  async ({ idToken }, { rejectWithValue }) => {
+    try {
+      const res = await googleLoginApi(idToken);
+      if (res?.redirect_url) {
+        if (res.accessToken) {
+          localStorage.setItem("access_token", res.accessToken);
+        } else {
+          localStorage.removeItem("access_token");
+        }
+        return res;
+      }
+      return rejectWithValue(res?.message || "Đăng nhập Google thất bại");
     } catch (err) {
       return rejectWithValue(err?.message || "Lỗi kết nối server");
     }
@@ -123,6 +144,16 @@ const authSlice = createSlice({
         state.successMsg = action.payload?.message || "Đăng nhập thành công!";
       })
       .addCase(loginUser.rejected, rejected);
+
+    builder
+      .addCase(googleLoginUser.pending, pending)
+      .addCase(googleLoginUser.fulfilled, (state, action) => {
+        state.loading = false;
+        state.isAuthenticated = true;
+        state.successMsg =
+          action.payload?.message || "Đăng nhập Google thành công!";
+      })
+      .addCase(googleLoginUser.rejected, rejected);
 
     builder
       .addCase(registerUser.pending, pending)

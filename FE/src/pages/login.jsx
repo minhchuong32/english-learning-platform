@@ -1,19 +1,25 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { loginUser, clearMessages } from "../store/authSlice.js";
+import {
+  loginUser,
+  googleLoginUser,
+  clearMessages,
+} from "../store/authSlice.js";
 import { AuthLayout } from "../components/layout/AuthLayout.jsx";
 import {
   InputField,
   Button,
   Alert,
   AuthCard,
+  Divider,
 } from "../components/ui/index.jsx";
 
 function LoginPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { loading, error, successMsg } = useSelector((state) => state.auth);
+  const googleButtonRef = useRef(null);
   const [form, setForm] = useState({
     identifier: "",
     password: "",
@@ -21,6 +27,82 @@ function LoginPage() {
   });
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
+  const [googleError, setGoogleError] = useState("");
+
+  useEffect(() => {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+    if (!clientId) {
+      setGoogleError("Thiếu VITE_GOOGLE_CLIENT_ID trong FE/.env.development.");
+      return undefined;
+    }
+
+    const renderGoogleButton = () => {
+      if (!window.google?.accounts?.id || !googleButtonRef.current) return;
+
+      googleButtonRef.current.innerHTML = "";
+      window.google.accounts.id.initialize({
+        client_id: clientId,
+        callback: (response) => {
+          if (!response?.credential) {
+            setGoogleError("Không nhận được token đăng nhập từ Google.");
+            return;
+          }
+
+          setGoogleError("");
+          dispatch(googleLoginUser({ idToken: response.credential }))
+            .unwrap()
+            .then((result) => {
+              window.alert(result?.message || "Đăng nhập Google thành công.");
+              navigate("/home", { replace: true });
+            })
+            .catch(() => {});
+        },
+      });
+
+      window.google.accounts.id.renderButton(googleButtonRef.current, {
+        theme: "outline",
+        size: "large",
+        text: "continue_with",
+        shape: "pill",
+        logo_alignment: "left",
+        width: 320,
+      });
+    };
+
+    if (window.google?.accounts?.id) {
+      renderGoogleButton();
+      return undefined;
+    }
+
+    const existingScript = document.querySelector(
+      'script[data-google-identity="true"]',
+    );
+
+    if (existingScript) {
+      existingScript.addEventListener("load", renderGoogleButton, {
+        once: true,
+      });
+      return undefined;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    script.dataset.googleIdentity = "true";
+    script.onload = renderGoogleButton;
+    script.onerror = () => {
+      setGoogleError("Không tải được Google Sign-In. Vui lòng thử lại.");
+    };
+
+    document.head.appendChild(script);
+
+    return () => {
+      script.onload = null;
+      script.onerror = null;
+    };
+  }, [dispatch, navigate]);
 
   const updateField = (field) => (event) => {
     const value =
@@ -142,6 +224,24 @@ function LoginPage() {
             {loading ? "Đang đăng nhập..." : "Đăng nhập"}
           </Button>
         </form>
+
+        <div className="my-6">
+          <Divider text="hoặc" />
+        </div>
+
+        <div className="space-y-3">
+          <p className="text-center text-sm text-gray-500">
+            Đăng nhập nhanh bằng tài khoản Google
+          </p>
+
+          <div className="flex justify-center">
+            <div ref={googleButtonRef} className="min-h-[44px]" />
+          </div>
+
+          {googleError ? (
+            <p className="text-center text-xs text-red-500">{googleError}</p>
+          ) : null}
+        </div>
 
         <p className="mt-6 text-center text-sm text-gray-500">
           Chưa có tài khoản?{" "}
