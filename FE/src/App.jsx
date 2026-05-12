@@ -1,45 +1,46 @@
 import { useState } from "react";
-import { LearningHeader } from "./components/layout/header.jsx";
-import ForgotPasswordPage from "./pages/forgot-password.jsx";
+import { useSelector } from "react-redux";
+import { Provider } from "react-redux";
+import store from "./store/index.js";
+import { Navbar } from "./components/layout/Navbar.jsx";
+import HomePage from "./pages/home.jsx";
 import LoginPage from "./pages/login.jsx";
-import ProfilePage from "./pages/user.jsx";
 import RegisterPage from "./pages/register.jsx";
+import ForgotPasswordPage from "./pages/forgot-password.jsx";
+import ProfilePage from "./pages/user.jsx";
 
-const pages = {
-  login: {
-    label: "Login",
-    component: LoginPage,
-  },
-  register: {
-    label: "Register",
-    component: RegisterPage,
-  },
-  forgot: {
-    label: "Forgot Password",
-    component: ForgotPasswordPage,
-  },
-  profile: {
-    label: "Profile",
-    component: ProfilePage,
-  },
+const PAGES = {
+  home: HomePage,
+  login: LoginPage,
+  register: RegisterPage,
+  forgot: ForgotPasswordPage,
+  profile: ProfilePage,
 };
 
-function App() {
-  const [screen, setScreen] = useState("login");
-  const ActivePage = pages[screen]?.component ?? LoginPage;
+// Pages that use their own full-page layout (no shared navbar)
+const FULL_PAGE = new Set(["home", "login", "register", "forgot"]);
+
+function AppContent() {
+  const { isAuthenticated } = useSelector((state) => state.auth);
+  const [screen, setScreen] = useState(() =>
+    isAuthenticated ? "home" : "login",
+  );
+  const ActivePage = PAGES[screen] ?? LoginPage;
+  const showNavbar = screen === "profile";
 
   return (
-    <div className="app-shell">
-      <LearningHeader
-        activeScreen={screen}
-        onNavigate={setScreen}
-        pageLabel={pages[screen]?.label ?? "Login"}
-      />
-
-      <main className="app-main">
-        <ActivePage onNavigate={setScreen} />
-      </main>
+    <div className="min-h-screen">
+      {showNavbar && <Navbar currentPage={screen} onNavigate={setScreen} />}
+      <ActivePage onNavigate={setScreen} />
     </div>
+  );
+}
+
+function App() {
+  return (
+    <Provider store={store}>
+      <AppContent />
+    </Provider>
   );
 }
 

@@ -1,23 +1,19 @@
 const express = require("express");
 const router = express.Router();
-const { verifyToken, authorizeRole } = require("../middleware/authMiddleware");
 const profileController = require("../controllers/profileController");
+const { verifyToken, authorizeRole } = require("../middleware/authMiddleWare");
+
 const initAPI = (app) => {
-  router.get("/", (req, res) => {
-    return res.send("Homepage");
-  });
-  router.get(
-    "/user/profile",
-    verifyToken,
-    authorizeRole("user"),
-    profileController.userProfile,
-  );
+  router.get("/user/profile", verifyToken, profileController.userProfile);
+  router.put("/user/profile", verifyToken, profileController.updateUserProfile);
   router.get(
     "/admin/profile",
     verifyToken,
     authorizeRole("admin"),
     profileController.adminProfile,
   );
+
   return app.use("/", router);
 };
+
 module.exports = initAPI;

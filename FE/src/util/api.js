@@ -1,38 +1,25 @@
 import axios from "./axios.customize";
 
-const createUserApi = (name, email, password) => {
-  const URL_API = "/v1/api/register";
-  const data = { name, email, password };
-  return axios.post(URL_API, data);
-};
+// Auth APIs — matched to BE/src/routes/authRoutes.js
+export const loginApi = (identifier, password) =>
+  axios.post("/api/auth/login", { identifier, password });
 
-const loginApi = (email, password) => {
-  const URL_API = "/v1/api/login";
-  const data = { email, password };
-  return axios.post(URL_API, data);
-};
+export const googleLoginApi = (idToken) =>
+  axios.post("/api/auth/google", { idToken });
 
-const getUserApi = () => {
-  const URL_API = "/v1/api/user";
-  return axios.get(URL_API);
-};
+export const registerApi = (username, email, password) =>
+  axios.post("/api/auth/register", { username, email, password });
 
-const forgotPasswordApi = (email) => {
-  const URL_API = "/v1/api/forgot-password";
-  const data = { email };
-  return axios.post(URL_API, data);
-};
+export const forgotPasswordApi = (email) =>
+  axios.post("/api/auth/forgot-password", { email });
 
-const resetPasswordApi = (token, newPassword) => {
-  const URL_API = "/v1/api/reset-password";
-  const data = { token, newPassword };
-  return axios.post(URL_API, data);
-};
+export const resetPasswordApi = (token, newPassword) =>
+  axios.post("/api/auth/reset-password", { token, newPassword });
 
-export {
-  createUserApi,
-  loginApi,
-  getUserApi,
-  forgotPasswordApi,
-  resetPasswordApi,
-};
+// Profile APIs — matched to BE/src/routes/api.js
+export const getUserProfileApi = () => axios.get("/user/profile");
+
+export const getAdminProfileApi = () => axios.get("/admin/profile");
+
+export const updateProfileApi = (profileData) =>
+  axios.put("/user/profile", profileData);

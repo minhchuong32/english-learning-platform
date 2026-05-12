@@ -4,9 +4,12 @@ const jwt = require("jsonwebtoken");
 const { OAuth2Client } = require("google-auth-library");
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const loginUser = async (identifier, password) => {
+  const normalizedIdentifier = identifier.trim();
+  const emailIdentifier = normalizedIdentifier.toLowerCase();
+
   // 1. Tìm người dùng trong Database (findUser)
   const user = await User.findOne({
-    $or: [{ email: identifier }, { username: identifier }],
+    $or: [{ email: emailIdentifier }, { username: normalizedIdentifier }],
   });
 
   // 2. Không tìm thấy người dùng

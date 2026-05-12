@@ -1,6 +1,111 @@
 const authService = require("../services/authService");
+const User = require("../models/userModel");
+const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
 const getLogin = (req, res) => {
   return res.render("login.ejs");
+};
+
+const register = async (req, res) => {
+  try {
+    const { username, email, password } = req.body;
+    const normalizedUsername = username?.trim();
+    const normalizedEmail = email?.trim().toLowerCase();
+
+    if (!normalizedUsername || !normalizedEmail || !password) {
+      return res
+        .status(400)
+        .json({ message: "Dữ liệu bị trống hoặc sai định dạng." });
+    }
+
+    const existingUser = await User.findOne({
+      $or: [{ email: normalizedEmail }, { username: normalizedUsername }],
+    });
+    if (existingUser) {
+      return res.status(409).json({ message: "Tài khoản đã tồn tại." });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await User.create({
+      username: normalizedUsername,
+      email: normalizedEmail,
+      password: hashedPassword,
+      role: "user",
+      profile: {},
+    });
+
+    return res.status(201).json({ message: "Đăng ký thành công." });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Lỗi server nội bộ." });
+  }
+};
+
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const normalizedEmail = email?.trim().toLowerCase();
+
+    if (!normalizedEmail) {
+      return res
+        .status(400)
+        .json({ message: "Dữ liệu bị trống hoặc sai định dạng." });
+    }
+
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) {
+      return res.status(200).json({
+        message: "Email khôi phục đã được gửi! Kiểm tra hộp thư của bạn.",
+      });
+    }
+
+    const token = crypto.randomBytes(24).toString("hex");
+    user.otp = {
+      code: token,
+      expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+    };
+    await user.save();
+
+    return res.status(200).json({
+      message: "Email khôi phục đã được gửi! Kiểm tra hộp thư của bạn.",
+      token,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Lỗi server nội bộ." });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return res
+        .status(400)
+        .json({ message: "Dữ liệu bị trống hoặc sai định dạng." });
+    }
+
+    const user = await User.findOne({
+      "otp.code": token,
+      "otp.expiresAt": { $gt: new Date() },
+    });
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ message: "Token không hợp lệ hoặc đã hết hạn." });
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    user.otp = undefined;
+    await user.save();
+
+    return res.status(200).json({ message: "Đặt lại mật khẩu thành công." });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Lỗi server nội bộ." });
+  }
 };
 const login = async (req, res) => {
   try {
@@ -76,4 +181,7 @@ module.exports = {
   login,
   getLogin,
   googleLogin,
+  register,
+  forgotPassword,
+  resetPassword,
 };
