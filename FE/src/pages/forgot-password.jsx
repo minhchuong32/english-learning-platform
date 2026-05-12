@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { forgotPassword, clearMessages } from "../store/authSlice.js";
 import { AuthLayout } from "../components/layout/AuthLayout.jsx";
 import {
@@ -9,8 +10,9 @@ import {
   AuthCard,
 } from "../components/ui/index.jsx";
 
-function ForgotPasswordPage({ onNavigate }) {
+function ForgotPasswordPage() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { loading, error, successMsg } = useSelector((state) => state.auth);
   const [email, setEmail] = useState("");
   const [fieldError, setFieldError] = useState("");
@@ -33,7 +35,7 @@ function ForgotPasswordPage({ onNavigate }) {
     <AuthLayout>
       <AuthCard>
         <button
-          onClick={() => onNavigate("login")}
+          onClick={() => navigate("/login")}
           className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-brand-600 mb-5 transition-colors"
           type="button"
         >
@@ -90,7 +92,7 @@ function ForgotPasswordPage({ onNavigate }) {
         <p className="mt-6 text-center text-sm text-gray-500">
           Nhớ ra mật khẩu rồi?{" "}
           <button
-            onClick={() => onNavigate("login")}
+            onClick={() => navigate("/login")}
             className="text-brand-600 font-semibold hover:text-brand-700"
             type="button"
           >

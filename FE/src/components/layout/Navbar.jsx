@@ -1,14 +1,17 @@
 import { useDispatch, useSelector } from "react-redux";
+import { useLocation, useNavigate } from "react-router-dom";
 import { logout } from "../../store/authSlice";
 import { BrandLogo } from "../ui/index.jsx";
 
-export function Navbar({ currentPage, onNavigate }) {
+export function Navbar() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
   const { isAuthenticated } = useSelector((s) => s.auth);
 
   const handleLogout = () => {
     dispatch(logout());
-    onNavigate("login");
+    navigate("/login", { replace: true });
   };
 
   const publicNav = [
@@ -23,12 +26,14 @@ export function Navbar({ currentPage, onNavigate }) {
   ];
 
   const navItems = isAuthenticated ? authNav : publicNav;
+  const currentPage = location.pathname.replace(/^\//, "") || "login";
+  const activeKey = currentPage === "forgot-password" ? "forgot" : currentPage;
 
   return (
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 shadow-sm">
       <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
         <button
-          onClick={() => onNavigate(isAuthenticated ? "home" : "login")}
+          onClick={() => navigate(isAuthenticated ? "/home" : "/login")}
           className="shrink-0"
         >
           <BrandLogo size="sm" />
@@ -38,8 +43,12 @@ export function Navbar({ currentPage, onNavigate }) {
           {navItems.map((item) => (
             <button
               key={item.key}
-              onClick={() => onNavigate(item.key)}
-              className={`nav-pill ${currentPage === item.key ? "nav-pill-active" : "nav-pill-inactive"}`}
+              onClick={() =>
+                navigate(
+                  `/${item.key === "forgot" ? "forgot-password" : item.key}`,
+                )
+              }
+              className={`nav-pill ${activeKey === item.key ? "nav-pill-active" : "nav-pill-inactive"}`}
             >
               {item.label}
             </button>

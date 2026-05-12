@@ -1,12 +1,13 @@
 # FlashLearn FE
 
-Frontend của bài tập được xây dựng bằng React + Vite + Redux Toolkit + Tailwind CSS. Ứng dụng tập trung vào luồng xác thực người dùng và quản lý hồ sơ cá nhân, gồm các màn hình chính: đăng nhập, đăng ký, quên mật khẩu, trang chủ và chỉnh sửa profile.
+Frontend của bài tập được xây dựng bằng React + Vite + Redux Toolkit + React Router DOM + Tailwind CSS. Ứng dụng tập trung vào luồng xác thực người dùng và quản lý hồ sơ cá nhân, gồm các màn hình chính: đăng nhập, đăng ký, quên mật khẩu, trang chủ và chỉnh sửa profile.
 
 ## 1. Công nghệ sử dụng
 
 - React 19
 - Vite
 - Redux Toolkit + React Redux
+- React Router DOM
 - Axios
 - Tailwind CSS
 
@@ -16,9 +17,12 @@ Frontend của bài tập được xây dựng bằng React + Vite + Redux Toolk
 
 Đây là component gốc của ứng dụng FE. App không dùng router riêng mà điều hướng bằng state cục bộ `screen`.
 
-- Khi chưa đăng nhập, app mở màn hình `login`.
-- Khi đã đăng nhập, app có thể chuyển sang `home` hoặc `profile`.
-- `Navbar` chỉ hiển thị ở màn hình `profile`.
+App hiện dùng `BrowserRouter` và khai báo route trực tiếp trong `App.jsx`.
+
+- `/login`, `/register`, `/forgot-password` là các route public.
+- `/home`, `/profile` là các route cần đăng nhập.
+- `RequireAuth` sẽ chặn người chưa đăng nhập và đẩy về `/login`.
+- `PublicOnly` sẽ đẩy người đã đăng nhập từ `/login` hoặc `/register` sang `/home`.
 
 ### `src/main.jsx`
 
@@ -82,9 +86,9 @@ Khai báo theme, utility class và style dùng chung cho toàn bộ FE.
 ### 3.1 Khởi động ứng dụng
 
 1. `main.jsx` render `App`.
-2. `App.jsx` bọc toàn bộ ứng dụng bằng `Provider` của Redux.
+2. `App.jsx` bọc toàn bộ ứng dụng bằng `Provider` của Redux và `BrowserRouter`.
 3. Trạng thái `isAuthenticated` được khởi tạo từ `localStorage` qua `access_token`.
-4. Dựa vào state `screen`, app hiển thị màn hình phù hợp.
+4. Router quyết định màn hình nào được render dựa trên URL hiện tại.
 
 ### 3.2 Luồng đăng nhập
 
@@ -96,12 +100,13 @@ File xử lý chính: `src/pages/login.jsx`
 4. `loginUser` trong `authSlice` gọi `loginApi()` đến backend.
 5. Nếu backend trả về `redirect_url` và `accessToken`, token được lưu vào `localStorage`.
 6. Redux cập nhật `isAuthenticated = true`.
-7. App chuyển sang `home`.
+7. Component gọi `navigate("/home", { replace: true })` để chuyển sang trang chủ.
 
 Lưu ý:
 
 - Checkbox “Ghi nhớ” hiện đang là trạng thái UI, chưa được xử lý riêng ở store.
 - Khi có lỗi, thông báo được hiển thị bằng `Alert`.
+- Sau khi login thành công, route `/login` sẽ tự bị chặn bởi `PublicOnly` nếu người dùng quay lại.
 
 ### 3.3 Luồng đăng ký
 
@@ -111,7 +116,7 @@ File xử lý chính: `src/pages/register.jsx`
 2. FE kiểm tra các trường bắt buộc và xác nhận mật khẩu.
 3. Gọi `dispatch(registerUser({ username, email, password }))`.
 4. `registerUser` gọi `registerApi()` lên backend.
-5. Nếu thành công, app hiển thị thông báo và chuyển về màn hình `login`.
+5. Nếu thành công, app hiển thị thông báo và gọi `navigate("/login", { replace: true })`.
 
 ### 3.4 Luồng quên mật khẩu
 
@@ -122,18 +127,20 @@ File xử lý chính: `src/pages/forgot-password.jsx`
 3. Gọi `dispatch(forgotPassword({ email }))`.
 4. Backend xử lý gửi email khôi phục mật khẩu.
 5. FE hiển thị thông báo thành công hoặc lỗi.
+6. Nút quay lại đăng nhập dùng `navigate("/login")`.
 
 ### 3.5 Luồng xem và chỉnh sửa profile
 
 File xử lý chính: `src/pages/user.jsx`
 
 1. Khi vào màn hình profile, FE kiểm tra `isAuthenticated`.
-2. Nếu chưa đăng nhập, app điều hướng về `login`.
+2. Nếu chưa đăng nhập, `RequireAuth` trong `App.jsx` điều hướng về `login`.
 3. Nếu đã đăng nhập, FE gọi `dispatch(fetchUserProfile())` để lấy dữ liệu hồ sơ.
 4. Dữ liệu trả về được map vào form gồm `fullName`, `bio`, `phoneNumber`.
 5. Người dùng bấm nút `Chỉnh sửa` để bật `editMode`.
 6. Khi lưu, FE validate `fullName` rồi gọi `dispatch(updateProfile(form))`.
 7. Nếu backend trả về thành công, `user` trong Redux được cập nhật và form thoát khỏi chế độ chỉnh sửa.
+8. Nút đăng xuất gọi `dispatch(logout())` rồi `navigate("/login", { replace: true })`.
 
 ## 4. Các component quan trọng trong flow
 
@@ -169,6 +176,7 @@ Hiển thị khi user đã đăng nhập. Chứa:
 - chuyển sang trang chủ
 - chuyển sang hồ sơ
 - đăng xuất
+- sử dụng `useNavigate()` để đổi route theo URL thay vì đổi state nội bộ
 
 ### `BrandLogo`
 
@@ -194,15 +202,59 @@ Các hành động chính:
 - `logout`
 - `clearMessages`
 
-## 6. Kết nối backend
+### Luồng Redux chi tiết
 
-FE đang gọi API qua biến môi trường:
+1. Component dùng `useDispatch()` để gửi action/thunk.
+2. `createAsyncThunk` gọi API trong `src/util/api.js`.
+3. Khi request bắt đầu, reducer `pending` bật `loading = true` và xóa `error`/`successMsg` cũ.
+4. Khi request thành công, reducer `fulfilled` cập nhật `user`, `isAuthenticated` hoặc `successMsg`.
+5. Khi request thất bại, reducer `rejected` gán `error` để UI hiển thị qua `Alert`.
+6. Component dùng `useSelector()` để đọc state và render lại tương ứng.
+
+Tóm tắt nhanh theo màn hình:
+
+- Login: `dispatch(loginUser(...))` → lưu token vào `localStorage` → `navigate("/home")`.
+- Register: `dispatch(registerUser(...))` → hiển thị thông báo → `navigate("/login")`.
+- Forgot password: `dispatch(forgotPassword(...))` → hiển thị thông báo kết quả.
+- Home/Profile: `dispatch(fetchUserProfile())` để lấy dữ liệu user, `dispatch(updateProfile(...))` để lưu chỉnh sửa.
+- Logout: `dispatch(logout())` → xóa token khỏi `localStorage` → `navigate("/login")`.
+
+### Luồng navigate chi tiết
+
+1. React Router đọc URL hiện tại trong `BrowserRouter`.
+2. `Routes` trong `App.jsx` quyết định component nào được render.
+3. Khi người dùng bấm nút hoặc hoàn tất thao tác, component gọi `navigate(path)` từ `useNavigate()`.
+4. Một số route được bảo vệ bằng `RequireAuth` và `PublicOnly`.
+5. `replace: true` được dùng ở các bước login/logout để thay thế history hiện tại, tránh quay lại màn hình không phù hợp bằng nút Back.
+
+## 6. Kết nối FE và BE
+
+FE giao tiếp với BE thông qua `axios` được cấu hình sẵn trong `src/util/axios.customize.js`.
+
+Luồng kết nối cụ thể:
+
+1. Component ở `src/pages/` hoặc `src/store/authSlice.js` gọi các hàm API trong `src/util/api.js`.
+2. `api.js` map từng nghiệp vụ sang đúng endpoint của backend, ví dụ:
+   - `loginApi()` → `POST /api/auth/login`
+   - `registerApi()` → `POST /api/auth/register`
+   - `forgotPasswordApi()` → `POST /api/auth/forgot-password`
+   - `getUserProfileApi()` → `GET /user/profile`
+   - `updateProfileApi()` → `PUT /user/profile`
+3. `axios.customize.js` tự gắn `baseURL` từ biến môi trường `VITE_BACKEND_URL`.
+4. Nếu trong `localStorage` có `access_token`, interceptor sẽ tự thêm header `Authorization: Bearer <token>` vào request.
+5. BE trả về JSON, interceptor response sẽ lấy trực tiếp `response.data` để component và Redux xử lý.
+6. Nếu BE trả lỗi, interceptor sẽ trả về `error.response.data`, nên thông báo lỗi có thể hiển thị ngay trong `Alert`.
+
+Ví dụ cấu hình môi trường:
 
 ```env
 VITE_BACKEND_URL=http://localhost:8080
 ```
 
-Các endpoint được map trong `src/util/api.js` và tương ứng với backend hiện tại.
+Ghi chú:
+
+- `withCredentials: true` đang được bật để FE có thể làm việc với cookie/session nếu BE cần.
+- Token đăng nhập được lưu trong `localStorage` với key `access_token`, nên các request cần xác thực sẽ tự có header `Authorization`.
 
 ## 7. Chạy dự án
 
@@ -221,6 +273,6 @@ npm run preview
 
 ## 8. Ghi chú ngắn
 
-- Ứng dụng hiện dùng state cục bộ để điều hướng giữa các màn hình, chưa dùng React Router.
+- Ứng dụng hiện dùng React Router DOM để điều hướng giữa các màn hình.
 - Token đăng nhập được lưu trong `localStorage` với key `access_token`.
 - Luồng edit profile phụ thuộc vào dữ liệu profile lấy từ backend sau khi user đã đăng nhập.

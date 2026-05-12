@@ -1,23 +1,25 @@
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { fetchUserProfile, logout } from "../store/authSlice.js";
 import { BrandLogo, Button } from "../components/ui/index.jsx";
 
-function HomePage({ onNavigate }) {
+function HomePage() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
   const [profileOpen, setProfileOpen] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
-      onNavigate("login");
+      navigate("/login", { replace: true });
       return;
     }
 
     if (!user) {
       dispatch(fetchUserProfile());
     }
-  }, [dispatch, isAuthenticated, onNavigate, user]);
+  }, [dispatch, isAuthenticated, navigate, user]);
 
   useEffect(() => {
     const onDocumentClick = (event) => {
@@ -44,7 +46,7 @@ function HomePage({ onNavigate }) {
 
   const handleLogout = () => {
     dispatch(logout());
-    onNavigate("login");
+    navigate("/login", { replace: true });
   };
 
   return (
@@ -53,7 +55,7 @@ function HomePage({ onNavigate }) {
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
           <button
             type="button"
-            onClick={() => onNavigate("home")}
+            onClick={() => navigate("/home")}
             className="shrink-0"
           >
             <BrandLogo size="sm" />
@@ -62,14 +64,14 @@ function HomePage({ onNavigate }) {
           <div className="hidden md:flex items-center gap-2 rounded-full bg-gray-50 px-2 py-1.5 border border-gray-100">
             <button
               type="button"
-              onClick={() => onNavigate("home")}
+              onClick={() => navigate("/home")}
               className="nav-pill nav-pill-active"
             >
               Trang chủ
             </button>
             <button
               type="button"
-              onClick={() => onNavigate("profile")}
+              onClick={() => navigate("/profile")}
               className="nav-pill nav-pill-inactive"
             >
               Hồ sơ
@@ -156,7 +158,7 @@ function HomePage({ onNavigate }) {
                         className="text-sm"
                         onClick={() => {
                           setProfileOpen(false);
-                          onNavigate("profile");
+                          navigate("/profile");
                         }}
                       >
                         Xem hồ sơ
@@ -200,7 +202,7 @@ function HomePage({ onNavigate }) {
               <Button
                 type="button"
                 className="w-auto px-6"
-                onClick={() => onNavigate("profile")}
+                onClick={() => navigate("/profile")}
               >
                 Mở hồ sơ
               </Button>

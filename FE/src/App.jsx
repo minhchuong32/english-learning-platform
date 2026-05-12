@@ -1,47 +1,84 @@
-import { useState } from "react";
-import { useSelector } from "react-redux";
 import { Provider } from "react-redux";
+import { useSelector } from "react-redux";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import store from "./store/index.js";
-import { Navbar } from "./components/layout/Navbar.jsx";
 import HomePage from "./pages/home.jsx";
 import LoginPage from "./pages/login.jsx";
 import RegisterPage from "./pages/register.jsx";
 import ForgotPasswordPage from "./pages/forgot-password.jsx";
 import ProfilePage from "./pages/user.jsx";
 
-const PAGES = {
-  home: HomePage,
-  login: LoginPage,
-  register: RegisterPage,
-  forgot: ForgotPasswordPage,
-  profile: ProfilePage,
-};
-
-// Pages that use their own full-page layout (no shared navbar)
-const FULL_PAGE = new Set(["home", "login", "register", "forgot"]);
-
-function AppContent() {
-  const { isAuthenticated } = useSelector((state) => state.auth);
-  const [screen, setScreen] = useState(() =>
-    isAuthenticated ? "home" : "login",
-  );
-  const ActivePage = PAGES[screen] ?? LoginPage;
-  const showNavbar = screen === "profile";
-
-  return (
-    <div className="min-h-screen">
-      {showNavbar && <Navbar currentPage={screen} onNavigate={setScreen} />}
-      <ActivePage onNavigate={setScreen} />
-    </div>
-  );
-}
-
 function App() {
   return (
     <Provider store={store}>
-      <AppContent />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route
+            path="/login"
+            element={
+              <PublicOnly>
+                <LoginPage />
+              </PublicOnly>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <PublicOnly>
+                <RegisterPage />
+              </PublicOnly>
+            }
+          />
+          <Route
+            path="/forgot-password"
+            element={
+              <PublicOnly>
+                <ForgotPasswordPage />
+              </PublicOnly>
+            }
+          />
+          <Route
+            path="/home"
+            element={
+              <RequireAuth>
+                <HomePage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <RequireAuth>
+                <ProfilePage />
+              </RequireAuth>
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
     </Provider>
   );
+}
+
+function RequireAuth({ children }) {
+  const { isAuthenticated } = useSelector((state) => state.auth);
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
+
+function PublicOnly({ children }) {
+  const { isAuthenticated } = useSelector((state) => state.auth);
+
+  if (isAuthenticated) {
+    return <Navigate to="/home" replace />;
+  }
+
+  return children;
 }
 
 export default App;

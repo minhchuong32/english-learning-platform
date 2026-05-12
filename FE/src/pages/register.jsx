@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { registerUser, clearMessages } from "../store/authSlice.js";
 import { AuthLayout } from "../components/layout/AuthLayout.jsx";
 import {
@@ -9,8 +10,9 @@ import {
   AuthCard,
 } from "../components/ui/index.jsx";
 
-function RegisterPage({ onNavigate }) {
+function RegisterPage() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { loading, error, successMsg } = useSelector((state) => state.auth);
   const [form, setForm] = useState({
     username: "",
@@ -59,7 +61,7 @@ function RegisterPage({ onNavigate }) {
       .unwrap()
       .then((response) => {
         window.alert(response?.message || "Đăng ký thành công.");
-        onNavigate("login");
+        navigate("/login", { replace: true });
       })
       .catch(() => {});
   };
@@ -151,7 +153,7 @@ function RegisterPage({ onNavigate }) {
         <p className="mt-6 text-center text-sm text-gray-500">
           Đã có tài khoản?{" "}
           <button
-            onClick={() => onNavigate("login")}
+            onClick={() => navigate("/login")}
             className="text-brand-600 font-semibold hover:text-brand-700"
           >
             Đăng nhập

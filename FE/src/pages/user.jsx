@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import {
   fetchUserProfile,
   updateProfile,
@@ -8,8 +9,9 @@ import {
 } from "../store/authSlice";
 import { InputField, Button, Alert, Spinner } from "../components/ui/index.jsx";
 
-function ProfilePage({ onNavigate }) {
+function ProfilePage() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { user, loading, error, successMsg, isAuthenticated } = useSelector(
     (s) => s.auth,
   );
@@ -23,8 +25,8 @@ function ProfilePage({ onNavigate }) {
   const [editMode, setEditMode] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated) onNavigate("login");
-  }, [isAuthenticated, onNavigate]);
+    if (!isAuthenticated) navigate("/login", { replace: true });
+  }, [isAuthenticated, navigate]);
 
   useEffect(() => {
     dispatch(fetchUserProfile());
@@ -64,7 +66,7 @@ function ProfilePage({ onNavigate }) {
 
   const handleLogout = () => {
     dispatch(logout());
-    onNavigate("login");
+    navigate("/login", { replace: true });
   };
 
   if (loading && !user) {

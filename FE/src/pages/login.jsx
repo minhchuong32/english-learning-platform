@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { loginUser, clearMessages } from "../store/authSlice.js";
 import { AuthLayout } from "../components/layout/AuthLayout.jsx";
 import {
@@ -9,8 +10,9 @@ import {
   AuthCard,
 } from "../components/ui/index.jsx";
 
-function LoginPage({ onNavigate }) {
+function LoginPage() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { loading, error, successMsg } = useSelector((state) => state.auth);
   const [form, setForm] = useState({
     identifier: "",
@@ -53,7 +55,7 @@ function LoginPage({ onNavigate }) {
       .unwrap()
       .then((response) => {
         window.alert(response?.message || "Đăng nhập thành công.");
-        onNavigate("home");
+        navigate("/home", { replace: true });
       })
       .catch(() => {});
   };
@@ -129,7 +131,7 @@ function LoginPage({ onNavigate }) {
             </label>
             <button
               type="button"
-              onClick={() => onNavigate("forgot")}
+              onClick={() => navigate("/forgot-password")}
               className="text-sm text-brand-600 hover:text-brand-700 font-medium"
             >
               Quên mật khẩu?
@@ -144,7 +146,7 @@ function LoginPage({ onNavigate }) {
         <p className="mt-6 text-center text-sm text-gray-500">
           Chưa có tài khoản?{" "}
           <button
-            onClick={() => onNavigate("register")}
+            onClick={() => navigate("/register")}
             className="text-brand-600 font-semibold hover:text-brand-700"
           >
             Đăng ký miễn phí
